@@ -12,6 +12,7 @@ import (
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/tiago4k/greenlight/internal/data"
+	"github.com/tiago4k/greenlight/internal/mailer"
 )
 
 const version = "1.0.0"
@@ -30,22 +31,34 @@ type config struct {
 		burst   int
 		enabled bool
 	}
+	smtp struct {
+		host     string
+		port     int
+		username string
+		password string
+		sender   string
+	}
 }
 
 type application struct {
 	config config
 	logger *slog.Logger
 	models data.Models
+	mailer mailer.Mailer
 }
 
 func main() {
 	var cfg config
 
-	defaultGreenlightPostgreDSN, err := loadDotEnvVariable("GREENLIGHT_DB_DSN")
+	err := loadDotEnvFile()
 	if err != nil {
 		log.Fatalf("Error loading .env file: %s", err)
 		os.Exit(1)
 	}
+
+	defaultGreenlightPostgreDSN := os.Getenv("GREENLIGHT_DB_DSN")
+	defaultSmtpUsername := os.Getenv("SMTP_USERNAME")
+	defaultSmtpPassword := os.Getenv("SMTP_PASSWORD")
 
 	flag.IntVar(&cfg.port, "port", 4000, "API server port")
 	flag.StringVar(&cfg.env, "env", "development", "Environment (development|staging|production)")
@@ -59,6 +72,12 @@ func main() {
 	flag.Float64Var(&cfg.limiter.rps, "limiter-rps", 2, "Rate limiter maximum requests per second")
 	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 4, "Rate limiter maximum burst")
 	flag.BoolVar(&cfg.limiter.enabled, "limiter-enabled", true, "Enable rate limiter")
+
+	flag.StringVar(&cfg.smtp.host, "smtp-host", "sandbox.smtp.mailtrap.io", "SMTP host")
+	flag.IntVar(&cfg.smtp.port, "smtp-port", 25, "SMTP port")
+	flag.StringVar(&cfg.smtp.username, "smtp-username", defaultSmtpUsername, "SMTP username")
+	flag.StringVar(&cfg.smtp.password, "smtp-password", defaultSmtpPassword, "SMTP password")
+	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "Greenlight <no-reply@greenlight.com>", "SMTP sender")
 
 	flag.Parse()
 
@@ -77,6 +96,7 @@ func main() {
 		config: cfg,
 		logger: logger,
 		models: data.NewModels(db),
+		mailer: mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender),
 	}
 
 	err = app.serve()
@@ -108,11 +128,11 @@ func openDB(cfg config) (*sql.DB, error) {
 	return db, nil
 }
 
-func loadDotEnvVariable(key string) (string, error) {
+func loadDotEnvFile() error {
 	err := godotenv.Load(".env")
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	return os.Getenv(key), nil
+	return nil
 }
