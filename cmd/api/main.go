@@ -38,7 +38,7 @@ type application struct {
 func main() {
 	var cfg config
 
-	defaultGreenlightPostgresDSN, err := loadDotEnvVariable("GREENLIGHT_DB_DSN")
+	defaultGreenlightPostgreDSN, err := loadDotEnvVariable("GREENLIGHT_DB_DSN")
 	if err != nil {
 		log.Fatalf("Error loading .env file: %s", err)
 		os.Exit(1)
@@ -47,11 +47,11 @@ func main() {
 	flag.IntVar(&cfg.port, "port", 4000, "API server port")
 	flag.StringVar(&cfg.env, "env", "development", "Environment (development|staging|production)")
 
-	flag.StringVar(&cfg.db.dsn, "db-dsn", defaultGreenlightPostgresDSN, "PostgresSQL DSN")
+	flag.StringVar(&cfg.db.dsn, "db-dsn", defaultGreenlightPostgreDSN, "PostgreSQL DSN")
 
-	flag.IntVar(&cfg.db.maxOpenConns, "db-max-open-conns", 25, "PostgresSQL max open connections")
-	flag.IntVar(&cfg.db.maxIdleConns, "db-max-idle-conns", 25, "PostgresSQL max idle connections")
-	flag.DurationVar(&cfg.db.maxIdleTime, "db-max-idle-time", 15*time.Minute, "PostgresSQL max connection idle time")
+	flag.IntVar(&cfg.db.maxOpenConns, "db-max-open-conns", 25, "PostgreSQL max open connections")
+	flag.IntVar(&cfg.db.maxIdleConns, "db-max-idle-conns", 25, "PostgreSQL max idle connections")
+	flag.DurationVar(&cfg.db.maxIdleTime, "db-max-idle-time", 15*time.Minute, "PostgreSQL max connection idle time")
 
 	flag.Parse()
 
