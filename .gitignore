@@ -23,6 +23,7 @@ go.work
 .DS_Store
 
 .envrc
+.env
 
 tmp
 

@@ -1,0 +1,4 @@
+http://greenlight.tiago4k.xyz {
+  respond /debug/* "Not Permitted" 403
+  reverse_proxy localhost:4000
+}
