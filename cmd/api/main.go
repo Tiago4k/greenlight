@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"expvar"
 	"flag"
-	"log"
 	"log/slog"
 	"os"
 	"runtime"
@@ -13,7 +12,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/tiago4k/greenlight/internal/data"
 	"github.com/tiago4k/greenlight/internal/mailer"
@@ -58,20 +56,10 @@ type application struct {
 func main() {
 	var cfg config
 
-	err := loadDotEnvFile()
-	if err != nil {
-		log.Fatalf("Error loading .env file: %s", err)
-		os.Exit(1)
-	}
-
-	defaultGreenlightPostgreDSN := os.Getenv("GREENLIGHT_DB_DSN")
-	defaultSmtpUsername := os.Getenv("SMTP_USERNAME")
-	defaultSmtpPassword := os.Getenv("SMTP_PASSWORD")
-
 	flag.IntVar(&cfg.port, "port", 4000, "API server port")
 	flag.StringVar(&cfg.env, "env", "development", "Environment (development|staging|production)")
 
-	flag.StringVar(&cfg.db.dsn, "db-dsn", defaultGreenlightPostgreDSN, "PostgreSQL DSN")
+	flag.StringVar(&cfg.db.dsn, "db-dsn", "", "PostgreSQL DSN")
 
 	flag.IntVar(&cfg.db.maxOpenConns, "db-max-open-conns", 25, "PostgreSQL max open connections")
 	flag.IntVar(&cfg.db.maxIdleConns, "db-max-idle-conns", 25, "PostgreSQL max idle connections")
@@ -83,8 +71,8 @@ func main() {
 
 	flag.StringVar(&cfg.smtp.host, "smtp-host", "sandbox.smtp.mailtrap.io", "SMTP host")
 	flag.IntVar(&cfg.smtp.port, "smtp-port", 25, "SMTP port")
-	flag.StringVar(&cfg.smtp.username, "smtp-username", defaultSmtpUsername, "SMTP username")
-	flag.StringVar(&cfg.smtp.password, "smtp-password", defaultSmtpPassword, "SMTP password")
+	flag.StringVar(&cfg.smtp.username, "smtp-username", "", "SMTP username")
+	flag.StringVar(&cfg.smtp.password, "smtp-password", "", "SMTP password")
 	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "Greenlight <no-reply@greenlight.com>", "SMTP sender")
 
 	flag.Func("cors-trusted-origins", "Trusted CORS origins (space separated)", func(val string) error {
@@ -153,13 +141,4 @@ func openDB(cfg config) (*sql.DB, error) {
 	}
 
 	return db, nil
-}
-
-func loadDotEnvFile() error {
-	err := godotenv.Load(".env")
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
