@@ -25,3 +25,5 @@ go.work
 .envrc
 
 tmp
+
+bin/
